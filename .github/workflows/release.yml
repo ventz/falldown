@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: macos-universal
+            os: macos-latest
+          - name: linux-amd64
+            os: ubuntu-latest
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+          - name: windows-amd64
+            os: ubuntu-latest
+            goarch: amd64
+          - name: windows-arm64
+            os: ubuntu-latest
+            goarch: arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: Install Ebitengine dependencies
+        if: startsWith(matrix.name, 'linux-')
+        run: sudo apt-get update && sudo apt-get install -y libc6-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config
+      - name: Build
+        env:
+          NAME: ${{ matrix.name }}
+          WIN_ARCH: ${{ matrix.goarch }}
+        run: |
+          mkdir -p dist/falldown
+          cp README.md LICENSE dist/falldown/
+          flags=(-trimpath -ldflags="-s -w")
+          case "$NAME" in
+            macos-universal)
+              GOARCH=arm64 go build "${flags[@]}" -o dist/falldown-arm64 ./cmd/falldown
+              GOARCH=amd64 CGO_ENABLED=1 go build "${flags[@]}" -o dist/falldown-amd64 ./cmd/falldown
+              lipo -create -output dist/falldown/falldown dist/falldown-arm64 dist/falldown-amd64
+              (cd dist && zip -qr "falldown-$NAME.zip" falldown)
+              ;;
+            linux-*)
+              go build "${flags[@]}" -o dist/falldown/falldown ./cmd/falldown
+              tar -C dist -czf "dist/falldown-$NAME.tar.gz" falldown
+              ;;
+            windows-*)
+              GOOS=windows GOARCH="$WIN_ARCH" go build "${flags[@]}" -o dist/falldown/falldown.exe ./cmd/falldown
+              (cd dist && zip -qr "falldown-$NAME.zip" falldown)
+              ;;
+          esac
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ matrix.name }}
+          path: dist/falldown-${{ matrix.name }}.*
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          cd dist
+          sha256sum falldown-* > SHA256SUMS.txt
+          gh release create "$TAG" --title "Fall Down $TAG" --generate-notes falldown-* SHA256SUMS.txt

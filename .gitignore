@@ -1,0 +1,26 @@
+# Build output
+/bin/
+/falldown
+
+# Local / private
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.claude/
+.mcp.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+private/
+.private/
+sessions/
+.sessions/
+*.session
+.DS_Store
+
+# Original releases: fetched from ticalc.org by scripts/fetch-originals.sh
+/original/*
+!/original/README.md
