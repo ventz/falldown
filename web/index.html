@@ -9,10 +9,10 @@
   :root { --bar: 132px; --bg: #2a2c30; --fg: #e3e7dc; --muted: #b0b8a4; }
   html { height: 100%; background: var(--bg); }
   /* Ebitengine fills the body with its canvas and sets body styles inline;
-     !important keeps the body (and so the game) above the controls bar. */
-  body { margin: 0; height: calc(100% - var(--bar)) !important; background: var(--bg) !important; color: var(--fg); font: 15px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; overflow: hidden; }
-  #status { position: fixed; inset: 0 0 var(--bar) 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; }
-  #controls { position: fixed; left: 0; right: 0; bottom: 0; height: var(--bar); box-sizing: border-box; padding: 10px 16px; border-top: 1px solid #3f434a; display: flex; flex-direction: column; justify-content: center; gap: 8px; text-align: center; }
+     !important keeps the body (and so the game) below the controls bar. */
+  body { margin: var(--bar) 0 0 0 !important; height: calc(100% - var(--bar)) !important; background: var(--bg) !important; color: var(--fg); font: 15px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; overflow: hidden; }
+  #status { position: fixed; inset: var(--bar) 0 0 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; }
+  #controls { position: fixed; left: 0; right: 0; top: 0; height: var(--bar); box-sizing: border-box; padding: 10px 16px; border-bottom: 1px solid #3f434a; display: flex; flex-direction: column; justify-content: center; gap: 8px; text-align: center; }
   #controls p { margin: 0; color: var(--muted); }
   #controls strong { color: var(--fg); }
   .keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: 16px; }
