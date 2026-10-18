@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -78,7 +79,7 @@ func main() {
 		cable = link.NewGuest(*join)
 	case *host != "":
 		cable = link.NewHost(*host)
-	case v.Multiplayer:
+	case v.Multiplayer && runtime.GOOS != "js": // a browser can't open a TCP port
 		cable = link.NewHost(":" + link.DefaultPort)
 	}
 	if cable != nil {
@@ -95,7 +96,7 @@ func main() {
 	if cable != nil {
 		gameCable = cable
 	}
-	g := game.New(machine, v, gameCable, game.NewFileStore(game.DefaultStorePath()))
+	g := game.New(machine, v, gameCable, game.DefaultStore())
 	finished := make(chan struct{})
 	go func() {
 		defer close(finished)

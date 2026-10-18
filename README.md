@@ -15,6 +15,8 @@ A faithful desktop port of **Fall Down**, the TI-83 Plus assembly game, in Go.
 
 Steer the ball down through the gaps in the rising shelves. If the shelves push it off the top of the screen, the game is over.
 
+**[▶ Play it in your browser](https://ventz.github.io/falldown/)**, no install needed.
+
 ## Table of Contents
 
 - [Quick Install](#quick-install)
@@ -28,6 +30,8 @@ Steer the ball down through the gaps in the rising shelves. If the shelves push 
 - [License](#license)
 
 ## Quick Install
+
+The quickest way to play is the [browser version](https://ventz.github.io/falldown/). It's the same game compiled to WebAssembly, and saves your high score in the browser; 2-player needs a desktop build.
 
 Download the build for your system from the [latest release](https://github.com/ventz/falldown/releases/latest), unpack it and run `falldown`:
 

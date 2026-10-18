@@ -85,4 +85,5 @@ The port sends the same bytes over TCP. The host is player 1, matching the origi
 - **Text wrapping.** On v1.65's score screen, `_PutC` wraps after column 15, which leaves a blank line after "Your Score:". This follows the documented TI-OS behavior and hasn't been checked against a real calculator.
 - **Link timing.** Each byte sent costs a fixed 6,000 T-states. Real TIOS link transfers varied.
 - **Key queue.** `_GetCSC` on the calculator holds one pending scan code. The port's keypad keeps up to two, so a quick double tap at a menu isn't lost.
+- **Browser timing.** In the [browser build](https://ventz.github.io/falldown/) each wait is a plain `setTimeout`, which browsers round to a few milliseconds, so single frames jitter. Frames are scheduled against absolute times, so the average speed still matches the calculator. 2-player isn't available there, since a web page can't open a TCP connection.
 - **Link errors.** A peer that stops reading for 2 seconds ends the game, and a link that can't be set up (port in use, host unreachable) shows "Link error" on the LCD. The cable had no such failures.

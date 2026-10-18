@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fall Down</title>
+<meta name="description" content="Fall Down, the TI-83 Plus game, ported line by line from the original Z80 source. Play it in your browser.">
+<style>
+  html, body { margin: 0; height: 100%; background: #2a2c30; color: #c9cfbf; font: 14px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; overflow: hidden; }
+  #status { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; }
+  #keys { position: fixed; left: 0; right: 0; bottom: 0; padding: 8px 16px; text-align: center; font-size: 12px; color: #b0b8a4; pointer-events: none; }
+  #keys a { color: #b7c49f; pointer-events: auto; }
+  kbd { font: inherit; border: 1px solid #555a52; border-radius: 3px; padding: 0 4px; }
+</style>
+</head>
+<body>
+<div id="status">Loading Fall Down…</div>
+<div id="keys">
+  <kbd>←</kbd> <kbd>→</kbd> steer · <kbd>Space</kbd> start (2nd) · <kbd>Tab</kbd> speed (ALPHA; 1 is fast) · <kbd>M</kbd> pause · <kbd>O</kbd> resume · <kbd>Esc</kbd> quit · <kbd>F11</kbd> full screen ·
+  2-player needs the <a href="https://github.com/ventz/falldown/releases/latest">desktop build</a> ·
+  <a href="https://github.com/ventz/falldown">source</a>
+</div>
+<script src="wasm_exec.js"></script>
+<script>
+  const status = document.getElementById("status");
+  const go = new Go();
+  const load = WebAssembly.instantiateStreaming
+    ? WebAssembly.instantiateStreaming(fetch("falldown.wasm"), go.importObject)
+    : fetch("falldown.wasm").then(r => r.arrayBuffer()).then(b => WebAssembly.instantiate(b, go.importObject));
+  load.then(result => {
+    status.remove();
+    go.run(result.instance);
+  }).catch(err => {
+    status.textContent = "Fall Down couldn't start in this browser: " + err;
+  });
+</script>
+</body>
+</html>
