@@ -4,6 +4,7 @@ package ui
 
 import (
 	"image/color"
+	"runtime"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -48,6 +49,10 @@ type App struct {
 	lcd   *ebiten.Image // 96x64, scaled up with nearest filtering
 	grid  *ebiten.Image // pixel grid overlay at the current scale
 	glass *ebiten.Image // 1x1, stretched into the panel border
+
+	showHelp bool          // the key strip above the LCD; H toggles it
+	help     *ebiten.Image // the strip, rebuilt when the width changes
+	helpW    int
 }
 
 // New returns a window for m. finished must close when the game exits.
@@ -58,6 +63,8 @@ func New(m *calc.Machine, finished <-chan struct{}, ghost time.Duration) *App {
 		view:     lcdview.New(ghost),
 		ghost:    ghost,
 		held:     map[byte]bool{},
+		// The browser page lists the keys itself, outside the canvas.
+		showHelp: runtime.GOOS != "js",
 	}
 }
 
@@ -93,6 +100,9 @@ func (a *App) Update() error {
 			a.m.Keys.PressOn()
 		}
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyH) && runtime.GOOS != "js" {
+		a.showHelp = !a.showHelp
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyG) {
 		if a.view.Ghost > 0 {
 			a.view.Ghost = 0
@@ -113,6 +123,20 @@ func (a *App) Update() error {
 func (a *App) Draw(screen *ebiten.Image) {
 	screen.Fill(bezel)
 	sw, sh := screen.Bounds().Dx(), screen.Bounds().Dy()
+
+	top := 0
+	if a.showHelp {
+		if a.help == nil || a.helpW != sw {
+			if a.help != nil {
+				a.help.Deallocate()
+			}
+			a.help = ebiten.NewImageFromImage(helpStrip(sw, helpPixel(sw, ebiten.Monitor().DeviceScaleFactor())))
+			a.helpW = sw
+		}
+		screen.DrawImage(a.help, nil)
+		top = a.help.Bounds().Dy()
+	}
+	sh -= top
 
 	// Largest whole-number scale that leaves a margin, so every LCD pixel
 	// is the same size.
@@ -139,7 +163,7 @@ func (a *App) Draw(screen *ebiten.Image) {
 	a.lcd.WritePixels(a.pix)
 
 	w, h := calc.Width*scale, calc.Height*scale
-	x, y := (sw-w)/2, (sh-h)/2
+	x, y := (sw-w)/2, top+(sh-h)/2
 	pad := max(scale*2, 4)
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(float64(w+2*pad), float64(h+2*pad))

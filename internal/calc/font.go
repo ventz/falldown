@@ -176,6 +176,9 @@ func largeGlyph(r rune) [7]string {
 	return largeFont['?']
 }
 
+// SmallGlyph returns the small-font bitmap for r, as rows of '#' and '.'.
+func SmallGlyph(r rune) []string { return smallGlyph(r) }
+
 func smallGlyph(r rune) []string {
 	if g, ok := smallFont[r]; ok {
 		return g

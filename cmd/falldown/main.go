@@ -25,7 +25,8 @@ const keysHelp = `Keys (calculator -> keyboard):
   MODE           M             (1-player game: turn the calculator off / pause)
   ON             O             (wake up after MODE)
   CLEAR          Esc, Backspace, Q
-  G toggles LCD ghosting, F11 or Alt+Enter toggles full screen.`
+  G toggles LCD ghosting, F11 or Alt+Enter toggles full screen,
+  H hides or shows the key strip.`
 
 func main() {
 	version := flag.String("version", "1.65", "game release to play: 1.5 (classic) or 1.65 (adds 2-player link)")
@@ -104,7 +105,8 @@ func main() {
 	}()
 
 	ebiten.SetWindowTitle("Fall Down")
-	ebiten.SetWindowSize(calc.Width**scale*10/9+16, calc.Height**scale*10/9+16)
+	// The extra height is for the key strip above the LCD.
+	ebiten.SetWindowSize(calc.Width**scale*10/9+16, calc.Height**scale*10/9+16+24)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetTPS(ui.TPS)
 	ebiten.SetFullscreen(*fullscreen)

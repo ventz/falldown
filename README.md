@@ -105,7 +105,7 @@ Both descend from Florent Dhordain and Ahmed El-Helw's 1998 FallDown.
 | ON | O | Wake up after MODE |
 | CLEAR | Esc, Backspace, Q | Quit the game / quit to desktop from the title |
 
-`G` toggles LCD ghosting and `F11` or `Alt+Enter` toggles full screen. On the title screen, `Speed: 1` is the fast setting.
+The desktop window shows these keys in a strip above the screen; `H` hides or shows it. `G` toggles LCD ghosting and `F11` or `Alt+Enter` toggles full screen. On the title screen, `Speed: 1` is the fast setting.
 
 ## Two Players
 
