@@ -17,7 +17,7 @@ Steer the ball down through the gaps in the rising shelves. If the shelves push 
 
 | **[▶ Play in your browser](https://ventz.github.io/falldown/)** | **[⬇ Download for Mac, Windows and Linux](https://github.com/ventz/falldown/releases/latest)** |
 |---|---|
-| Nothing to install. Single player; the high score is saved in the browser. | Desktop builds in Releases, with 2-player over the network. |
+| Nothing to install. Single player; the high score is saved in the browser. On a phone, use [falldown.grok.me](https://falldown.grok.me/). | Desktop builds in Releases, with 2-player over the network. |
 
 ## Table of Contents
 
@@ -34,6 +34,8 @@ Steer the ball down through the gaps in the rising shelves. If the shelves push 
 ## Quick Install
 
 **In the browser:** [ventz.github.io/falldown](https://ventz.github.io/falldown/). It's the same game compiled to WebAssembly, with the controls shown above it. 2-player needs a desktop build.
+
+**On your phone:** [falldown.grok.me](https://falldown.grok.me/) is a touch version with a thumb stick to steer and a big 2nd button, built for phones in portrait or landscape. It's a JavaScript port of the same game, a single page in [`mobile/`](mobile/), and it plays frame for frame the same as the Go version. On a computer it uses the keyboard; add `?touch` to the address to see the phone layout.
 
 **On the desktop:** download the build for your system from the [latest release](https://github.com/ventz/falldown/releases/latest), unpack it and run `falldown`:
 
@@ -128,6 +130,7 @@ Choose `Players: 2` on both title screens, then press 2nd. Each screen shows bot
 
 ## Documentation
 
+- [`mobile/`](mobile/): the phone version. `index.html` is built from `js/` and `template.html` with `python3 mobile/build.py`; edit those, then rebuild
 - [Porting notes](docs/porting-notes.md): how the original works, the timing derivation, and each quirk that was preserved
 - [`original/`](original/README.md): how to fetch the original ticalc.org releases, with the Z80 source and `.8xp` programs (`scripts/fetch-originals.sh`)
 
