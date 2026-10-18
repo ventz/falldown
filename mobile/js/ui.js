@@ -41,6 +41,7 @@ function fit() {
 let lastSig = '', still = 0;
 function draw(t) {
   requestAnimationFrame(draw);
+  inputTick(t);
   const m = machine; if (!m || !scale) return;
   const sig = m.lcdOn + String.fromCharCode.apply(null, m.lcd);
   if (sig === lastSig && still > 60) { lastDraw = t; return; } // nothing moving
@@ -71,7 +72,7 @@ function startProgram() {
   game = new Game(machine, VARIANT, localStore);
   gen = game.run(); done = false;
   // Keys still held carry over to the new machine.
-  for (const sc in holders) if (holders[sc].size) machine.keys.held[sc] = true;
+  for (const sc in applied) if (applied[sc]) machine.keys.held[sc] = true;
   machine.clock.resync();
   pump();
 }
@@ -100,20 +101,47 @@ function programExited() {
 }
 
 // ---- input (ui.go KeyMap), shared by keyboard and touch ----
-const holders = {}; // scan code -> Set of sources holding it
+// Like the Go app, key events only record what is down; the emulated keypad
+// is updated from that state in a fixed-rate input tick (ui.go: Update at
+// TPS = 240, run from the browser's animation frame the way Ebitengine does
+// on the web). The game itself reads the arrow keys once per frame from the
+// keypad port (machine.arrowPort), so held keys behave exactly as in Go and
+// nothing samples faster than the original.
+const TPS = 240, TICK_MS = 1000 / TPS;
+const holders = {};          // scan code -> Set of sources holding it
+const applied = {};          // scan code -> state the keypad last saw
+const tapped = new Set();    // went down since the last tick (a tap shorter than a tick still registers)
+let onTapped = false, tickAcc = 0, lastTickT = 0;
 function setHeld(src, sc, down) {
   const s = holders[sc] || (holders[sc] = new Set());
-  const was = s.size > 0;
-  down ? s.add(src) : s.delete(src);
-  const is = s.size > 0;
-  if (is === was || !machine) return;
-  if (is) {
-    if (done) { if (sc === Sk2nd) startProgram(); return; }
-    machine.keys.press(sc);
-  } else machine.keys.release(sc);
+  if (down) { if (!s.has(src)) { s.add(src); tapped.add(sc); } } else s.delete(src);
 }
-function pressOn() { if (machine) machine.keys.pressOn(); }
-function releaseAll() { for (const sc in holders) for (const src of [...holders[sc]]) setHeld(src, +sc, false); }
+function pressOn() { onTapped = true; }
+function releaseAll() { for (const sc in holders) holders[sc].clear(); tapped.clear(); inputUpdate(); }
+// ui.go App.Update: push changed key states to the keypad.
+function inputUpdate() {
+  for (const k in holders) {
+    const sc = +k, down = holders[sc].size > 0 || tapped.has(sc);
+    if (down === !!applied[sc]) continue;
+    applied[sc] = down;
+    if (!machine) continue;
+    if (down) {
+      if (done) { if (sc === Sk2nd) startProgram(); continue; }
+      machine.keys.press(sc);
+    } else machine.keys.release(sc);
+  }
+  tapped.clear();
+  if (onTapped) { onTapped = false; if (machine) machine.keys.pressOn(); }
+}
+// Fixed timestep: at most one input update per 1/240 s of elapsed time,
+// whatever the display refresh rate (60, 120, 144 Hz...).
+function inputTick(t) {
+  if (!lastTickT) lastTickT = t;
+  tickAcc = Math.min(tickAcc + (t - lastTickT), 250); lastTickT = t;
+  if (tickAcc < TICK_MS) return;
+  tickAcc %= TICK_MS;
+  inputUpdate();
+}
 
 const KEYMAP = {
   ArrowLeft: SkLeft, ArrowRight: SkRight, ArrowUp: SkUp, ArrowDown: SkDown,
@@ -133,7 +161,7 @@ addEventListener('keyup', e => { const sc = KEYMAP[e.code]; if (sc) setHeld('kb:
 addEventListener('blur', releaseAll);
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
 
-// ---- touch controls (modeled on z-axis-traffic) ----
+// ---- touch controls ----
 const block = e => { if (e.cancelable) e.preventDefault(); };
 for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, block, { passive: false });
 document.addEventListener('dblclick', block, { passive: false });
@@ -144,49 +172,41 @@ document.addEventListener('touchend', e => {
   lastTouchEnd = now;
 }, { passive: false });
 document.addEventListener('touchmove', e => { if (e.touches.length > 1 || !(e.target.closest && e.target.closest('footer'))) block(e); }, { passive: false });
-for (const el of [canvas, $('touch'), $('stick'), ...document.querySelectorAll('.tb')])
+for (const el of [canvas, $('touch'), ...document.querySelectorAll('.tb')])
   for (const ev of ['touchstart', 'touchmove', 'touchend']) el.addEventListener(ev, block, { passive: false });
 
-// Thumb stick: steers by finger direction, not distance from the center.
-// It holds the arrow key the way the calculator's arrow keys work. Landing
-// on one side presses that side at once; after that, a small move the other
-// way (FLIP px from the farthest point) switches direction immediately, so a
-// left-to-right change never has to travel back through a dead zone.
-const FLIP = 4, LAND = 0.12;
-const stick = { id: null, x: 0, dir: 0, ext: 0 }, sEl = $('stick'), knob = $('knob');
-function stickDir(d) {
-  if (d === stick.dir) return;
-  stick.dir = d; stick.x = d;
-  setHeld('stick', SkLeft, d < 0);
-  setHeld('stick', SkRight, d > 0);
-}
-function stickMove(e, first) {
-  const r = sEl.getBoundingClientRect(), R = r.width / 2;
-  let dx = e.clientX - r.left - R, dy = e.clientY - r.top - R;
-  const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; }
-  knob.style.transform = `translate3d(${dx}px,${dy}px,0)`;
-  const x = e.clientX;
-  if (first) { stick.ext = x; stickDir(dx > R * LAND ? 1 : dx < -R * LAND ? -1 : 0); return; }
-  if (stick.dir > 0) { if (x > stick.ext) stick.ext = x; else if (stick.ext - x > FLIP) { stick.ext = x; stickDir(-1); } }
-  else if (stick.dir < 0) { if (x < stick.ext) stick.ext = x; else if (x - stick.ext > FLIP) { stick.ext = x; stickDir(1); } }
-  else if (Math.abs(x - stick.ext) > FLIP) { stickDir(x > stick.ext ? 1 : -1); stick.ext = x; }
-}
-function stickEvents(e) { return e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; }
-sEl.addEventListener('pointerdown', e => { e.preventDefault(); stick.id = e.pointerId; sEl.setPointerCapture(e.pointerId); stickMove(e, true); });
-sEl.addEventListener('pointermove', e => { if (e.pointerId === stick.id) for (const c of stickEvents(e)) stickMove(c.clientX === undefined ? e : c); });
-if ('onpointerrawupdate' in window) sEl.addEventListener('pointerrawupdate', e => { if (e.pointerId === stick.id) stickMove(e); });
-const stickEnd = e => { if (e.pointerId === stick.id) { stick.id = null; knob.style.transform = ''; stickDir(0); } };
-sEl.addEventListener('pointerup', stickEnd); sEl.addEventListener('pointercancel', stickEnd);
-
+// Calculator keys. Press-and-hold is holding the key: down on pointerdown,
+// up on pointerup / pointercancel / pointerleave. Each finger is its own
+// source, so LEFT and RIGHT can be held together and multi-touch works
+// (with both held the game moves left, as ckkey tests left first). Pointer
+// capture is released so sliding off a key lets it go, and sliding onto
+// the other arrow presses that one.
 for (const el of document.querySelectorAll('.tb')) {
-  const src = 'btn:' + el.id, sc = +el.dataset.sc;
-  const down = () => { el.classList.add('down'); if (sc) setHeld(src, sc, true); else pressOn(); };
-  const up = () => { el.classList.remove('down'); if (sc) setHeld(src, sc, false); };
-  el.addEventListener('pointerdown', e => { e.preventDefault(); try { el.setPointerCapture(e.pointerId); } catch (_) {} down(); });
-  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
-  // iOS fallback: the zoom guard preventDefaults touches here, so drive from touch events too.
-  el.addEventListener('touchstart', down, { passive: true });
-  const tEnd = e => { if (!e.targetTouches || e.targetTouches.length === 0) up(); };
+  const sc = +el.dataset.sc, fingers = new Set();
+  const sync = () => el.classList.toggle('down', fingers.size > 0);
+  const down = id => {
+    if (fingers.has(id)) return;
+    fingers.add(id); sync();
+    if (sc) setHeld('btn:' + el.id + ':' + id, sc, true); else pressOn();
+  };
+  const up = id => {
+    if (!fingers.delete(id)) return;
+    sync();
+    if (sc) setHeld('btn:' + el.id + ':' + id, sc, false);
+  };
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    try { if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId); } catch (_) {}
+    down('p' + e.pointerId);
+  });
+  el.addEventListener('pointerenter', e => { if (e.buttons & 1) down('p' + e.pointerId); });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) el.addEventListener(ev, e => up('p' + e.pointerId));
+  el.addEventListener('contextmenu', block);
+  if (window.PointerEvent) continue;
+  // Fallback for browsers without pointer events: each finger on the key
+  // holds it until it lifts.
+  el.addEventListener('touchstart', e => { for (const t of e.changedTouches) down('t' + t.identifier); }, { passive: true });
+  const tEnd = e => { for (const t of e.changedTouches) up('t' + t.identifier); };
   el.addEventListener('touchend', tEnd, { passive: true }); el.addEventListener('touchcancel', tEnd, { passive: true });
 }
 // Tapping the dark LCD after MODE is the same as ON.
@@ -198,4 +218,4 @@ fit();
 startProgram();
 requestAnimationFrame(draw);
 // For tests and the curious.
-window.falldown = { get machine() { return machine; }, get game() { return game; }, stick };
+window.falldown = { get machine() { return machine; }, get game() { return game; }, TPS };

@@ -35,7 +35,7 @@ Steer the ball down through the gaps in the rising shelves. If the shelves push 
 
 **In the browser:** [ventz.github.io/falldown](https://ventz.github.io/falldown/). It's the same game compiled to WebAssembly, with the controls shown above it. 2-player needs a desktop build.
 
-**On your phone:** [falldown.grok.me](https://falldown.grok.me/) is a touch version with a thumb stick to steer and a big 2nd button, built for phones in portrait or landscape. It's a JavaScript port of the same game, a single page in [`mobile/`](mobile/), and it plays frame for frame the same as the Go version. On a computer it uses the keyboard; add `?touch` to the address to see the phone layout.
+**On your phone:** [falldown.grok.me](https://falldown.grok.me/) is a touch version with big left and right arrow buttons, like the calculator's arrow keys, and the 2nd and option keys below them, built for phones in portrait or landscape. It's a JavaScript port of the same game, a single page in [`mobile/`](mobile/), and it plays frame for frame the same as the Go version. On a computer it uses the keyboard; add `?touch` to the address to see the phone layout.
 
 **On the desktop:** download the build for your system from the [latest release](https://github.com/ventz/falldown/releases/latest), unpack it and run `falldown`:
 
