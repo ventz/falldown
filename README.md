@@ -33,7 +33,7 @@ Steer the ball down through the gaps in the rising shelves. If the shelves push 
 
 ## Quick Install
 
-**In the browser:** [ventz.github.io/falldown](https://ventz.github.io/falldown/). It's the same game compiled to WebAssembly, with the controls shown under the screen. 2-player needs a desktop build.
+**In the browser:** [ventz.github.io/falldown](https://ventz.github.io/falldown/). It's the same game compiled to WebAssembly, with the controls shown above it. 2-player needs a desktop build.
 
 **On the desktop:** download the build for your system from the [latest release](https://github.com/ventz/falldown/releases/latest), unpack it and run `falldown`:
 
