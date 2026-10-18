@@ -1,6 +1,6 @@
 # Fall Down
 
-<p><strong>⭐ If Fall Down is useful to you, please <a href="https://github.com/ventz/falldown">star the repo</a>.</strong></p>
+<p><strong>⭐ If Fall Down is useful to you, please star it: click the ☆ Star button at the top right of the <a href="https://github.com/ventz/falldown">GitHub repo page</a>.</strong></p>
 
 <a href="https://github.com/ventz/falldown/stargazers"><img src="https://img.shields.io/github/stars/ventz/falldown?style=social" alt="GitHub stars"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
